@@ -1,6 +1,17 @@
+# Python
 __pycache__/
 *.pyc
+*.pyo
+
+# Virtual Env
+venv/
 .env
 .env.*
+
+# Django
 db.sqlite3
-venv/
+staticfiles/
+
+# OS / Editor
+.DS_Store
+.vscode/
