@@ -1,9 +1,30 @@
 from django.db import models
+from django.utils import timezone
 
 # Create your models here.
+# membuat prefix bulan
+MONTH_PREFIX = {
+    1: "JAN",
+    2: "FEB",
+    3: "MAR",
+    4: "APR",
+    5: "MEI",
+    6: "JUN",
+    7: "JUL",
+    8: "AGU",
+    9: "SEP",
+    10: "OKT",
+    11: "NOV",
+    12: "DES",
+}
+
 class TipeKunjungan(models.Model):
     id_tipe = models.SmallIntegerField(primary_key=True)
     nama_tipe = models.CharField(max_length=50)
+
+    class Meta:
+        verbose_name = "Tipe Kunjungan"
+        verbose_name_plural = "Tipe Kunjungan"
 
     def __str__(self):
         return self.nama_tipe
@@ -93,8 +114,16 @@ class Petugas(models.Model):
 
 class Kunjungan(models.Model):
     id_kunjungan = models.BigAutoField(primary_key=True)
-    nomor_kunjungan = models.CharField(max_length=20)
-    tanggal_kunjungan = models.DateField()
+
+    nomor_kunjungan = models.CharField(
+        max_length=20,
+        blank=True,
+        editable=False
+    )
+
+    tanggal_kunjungan = models.DateField(
+        default=timezone.now
+    )
 
     tamu = models.ForeignKey(Tamu, on_delete=models.PROTECT)
     tipe = models.ForeignKey(TipeKunjungan, on_delete=models.PROTECT)
@@ -130,10 +159,43 @@ class Kunjungan(models.Model):
     status_selesai = models.BooleanField(default=False)
     waktu_selesai = models.DateTimeField(null=True, blank=True)
 
-
     class Meta:
         verbose_name = "Kunjungan"
         verbose_name_plural = "Kunjungan"
+        ordering = ["-id_kunjungan"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tanggal_kunjungan", "nomor_kunjungan"],
+                name="unique_nomor_kunjungan_per_tanggal"
+            )
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self.nomor_kunjungan:
+            tanggal = self.tanggal_kunjungan or timezone.now().date()
+            bulan = tanggal.month
+            tahun = tanggal.year
+
+            prefix = MONTH_PREFIX.get(bulan, "XXX")
+
+            last = (
+                Kunjungan.objects
+                .filter(
+                    tanggal_kunjungan__year=tahun,
+                    tanggal_kunjungan__month=bulan,
+                    nomor_kunjungan__startswith=prefix
+                )
+                .order_by("id_kunjungan")
+                .last()
+            )
+
+            last_number = 0
+            if last and last.nomor_kunjungan:
+                last_number = int(last.nomor_kunjungan.replace(prefix, ""))
+
+            self.nomor_kunjungan = f"{prefix}{last_number + 1:04d}"
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.nomor_kunjungan
+        return f"{self.nomor_kunjungan} - {self.tamu.nama}"
