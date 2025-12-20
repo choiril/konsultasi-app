@@ -22,12 +22,12 @@ Estimasi waktu: **±1–2 jam per hari**
 * [-] Jalankan `python manage.py runserver` tanpa error
 * [ ] Pastikan koneksi PostgreSQL aktif
 * [ ] Pastikan `STATIC_ROOT` & `MEDIA_ROOT` terbaca
-* [ ] Buat superuser
-* [ ] Login ke Django Admin
+* [-] Buat superuser
+* [-] Login ke Django Admin
 
 ### B. Implementasi Model Core (sesuai ERD Final)
 
-* [ ] Buat model BukuTamu
+* [-] Buat model BukuTamu
 * [ ] Buat model Konsultasi
 * [ ] Buat model HasilKonsultasi
 * [ ] Buat model Lampiran (foto, ttd, pdf)
