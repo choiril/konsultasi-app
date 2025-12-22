@@ -1,7 +1,6 @@
 from django.db import models, transaction
 from django.utils import timezone
 from django.core.exceptions import ValidationError
-from .managers import TamuManager, PetugasManager, KunjunganManager
 
 
 MONTH_PREFIX = {
@@ -111,7 +110,6 @@ class Tamu(models.Model):
     no_hp = models.CharField(max_length=15, blank=True)
     instansi_perusahaan = models.CharField(max_length=150, blank=True)
     alamat = models.TextField(blank=True)
-    objects = TamuManager()
 
     class Meta:
         db_table = "tamu"
@@ -129,8 +127,6 @@ class Petugas(models.Model):
     role = models.CharField(max_length=50)
     is_active = models.BooleanField(default=True)
     ttd_petugas = models.CharField(max_length=255, blank=True)
-
-    objects = PetugasManager()
 
     class Meta:
         db_table = "petugas"
@@ -252,8 +248,6 @@ class Kunjungan(models.Model):
     status_selesai = models.BooleanField(default=False)
     waktu_selesai = models.DateTimeField(null=True, blank=True)
 
-    objects = KunjunganManager()
-
     class Meta:
         db_table = "kunjungan"
         verbose_name = "Kunjungan"
@@ -262,7 +256,7 @@ class Kunjungan(models.Model):
         indexes = [
             models.Index(fields=['tanggal_kunjungan']),
             models.Index(fields=['status_selesai']),
-            models.Index(fields=['id_kunjungan']),
+            models.Index(fields=['-id_kunjungan']),
             models.Index(fields=['id_tipe']),
             models.Index(fields=['id_kategori']),
         ]
@@ -276,11 +270,7 @@ class Kunjungan(models.Model):
     # ===== HELPER PROPERTIES =====
     @property
     def is_konsultasi(self):
-        """
-        TODO(HIGH): Replace with boolean flag check
-        Why: String matching is fragile
-        Risk: CRITICAL
-        """
+        """Cek apakah kategori adalah konsultasi"""
         if self.id_kategori:
             return 'konsultasi' in self.id_kategori.nama_kategori.lower()
         return False
@@ -328,7 +318,7 @@ class Kunjungan(models.Model):
 
     # ===== SAVE =====
     @transaction.atomic
-    def save(self, skip_validation=False, *args, **kwargs):
+    def save(self, *args, **kwargs):
         """
         Override save untuk:
         1. Auto-generate nomor kunjungan
@@ -377,8 +367,7 @@ class Kunjungan(models.Model):
             self.waktu_selesai = timezone.now()
 
         # Validasi sebelum save
-        if not skip_validation:
-            self.full_clean()
+        self.full_clean()
 
         super().save(*args, **kwargs)
 

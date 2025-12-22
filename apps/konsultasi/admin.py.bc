@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from django.db.models import Q
 from django.utils import timezone
 
-from apps.konsultasi.models import (
+from .models import (
     TipeKunjungan, KategoriLayanan,
     JenisLayanan, MediaKonsultasi,
     SumberJawaban, Tamu, Petugas,
@@ -428,7 +428,16 @@ class KunjunganAdmin(admin.ModelAdmin):
     # ===== QUERYSET OPTIMIZATION =====
     def get_queryset(self, request):
         """Optimize queries dengan select_related"""
-        return Kunjungan.objects.for_admin()
+        qs = super().get_queryset(request)
+        return qs.select_related(
+            'id_tamu',
+            'id_tipe',
+            'id_kategori',
+            'id_jenis',
+            'id_media',
+            'id_sumber',
+            'id_petugas',
+        )
 
 
 # ===== ADMIN SITE CUSTOMIZATION =====
